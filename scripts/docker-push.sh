@@ -2,7 +2,7 @@
 
 . ./scripts/version.sh
 
-name="sheet-crud"
+name="login-service"
 version="$login_service_version"
 repo="repository"
 namespace="docker"
