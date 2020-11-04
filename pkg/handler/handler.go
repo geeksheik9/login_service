@@ -9,7 +9,6 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/geeksheik9/login-service/models"
 	"github.com/geeksheik9/login-service/pkg/api"
-	model "github.com/geeksheik9/sheet-CRUD/models"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 )
@@ -92,7 +91,7 @@ func (s *LoginService) healthCheck(database LoginDatabase) http.Handler {
 			stringDBErr = dbErr.Error()
 		}
 
-		response := model.HealthCheckResponse{
+		response := models.HealthCheckResponse{
 			APIVersion: s.Version,
 			DBError:    stringDBErr,
 		}
