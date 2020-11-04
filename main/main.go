@@ -1,3 +1,10 @@
+// Package main Login Service API
+//
+// API for registering, logginging in, and getting user information
+//
+// version: 0.0.1-alpha
+//
+// swagger:meta
 package main
 
 import (
@@ -18,6 +25,7 @@ import (
 var version string
 
 func main() {
+	//go:generate swagger generate spec
 	logrus.Info("INITIALIZING GEAR CRUD")
 
 	accessor := viper.New()

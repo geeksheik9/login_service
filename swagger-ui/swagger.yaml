@@ -1,0 +1,86 @@
+definitions:
+  User:
+    description: User is the implementation of a user that would log in
+    properties:
+      firstName:
+        type: string
+        x-go-name: FirstName
+      lastName:
+        type: string
+        x-go-name: LastName
+      password:
+        type: string
+        x-go-name: Password
+      roles:
+        items:
+          type: string
+        type: array
+        x-go-name: Roles
+      token:
+        type: string
+        x-go-name: Token
+      username:
+        type: string
+        x-go-name: Username
+    type: object
+    x-go-package: github.com/geeksheik9/login-service/models
+info:
+  description: API for registering, logginging in, and getting user information
+  title: Login Service API
+  version: 0.0.1-alpha
+paths:
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Login Service
+      operationId: LoginUser
+      responses:
+        "200":
+          description: Success, returns JWT token
+        "400":
+          description: Bad request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      schemes:
+      - http
+      - https
+  /profile:
+    get:
+      consumes:
+      - application/json
+      description: Login Service
+      operationId: GetUserProfile
+      responses:
+        "200":
+          description: User
+          schema:
+            $ref: '#/definitions/User'
+        "400":
+          description: Bad request
+        "404":
+          description: NotFound
+        "500":
+          description: Internal Server Error
+      schemes:
+      - http
+      - https
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Login Service
+      operationId: RegisterUser
+      responses:
+        "200":
+          description: User Created
+        "400":
+          description: Bad request
+        "500":
+          description: Internal Server Error
+      schemes:
+      - http
+      - https
+swagger: "2.0"

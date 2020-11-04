@@ -32,10 +32,46 @@ func (s *LoginService) Routes(r *mux.Router) *mux.Router {
 	r.HandleFunc("/ping", s.PingCheck).Methods(http.MethodGet)
 	r.Handle("/health", s.healthCheck(s.Database)).Methods(http.MethodGet)
 
+	// swagger:route POST /register RegisterUser
+	//
+	// Login Service
+	//
+	// Consumes:
+	// - application/json
+	// Schemes: http, https
+	//
+	// responses:
+	// 200: description:User Created
+	// 400: description:Bad request
+	// 500: description:Internal Server Error
 	r.HandleFunc("/register", s.RegisterUser).Methods(http.MethodPost)
-
+	// swagger:route POST /login LoginUser
+	//
+	// Login Service
+	//
+	// Consumes:
+	// - application/json
+	// Schemes: http, https
+	//
+	// responses:
+	// 200: description:Success, returns JWT token
+	// 400: description:Bad request
+	// 404: description:Not Found
+	// 500: description:Internal Server Error
 	r.HandleFunc("/login", s.LoginUser).Methods(http.MethodPost)
-
+	// swagger:route GET /profile GetUserProfile
+	//
+	// Login Service
+	//
+	// Consumes:
+	// - application/json
+	// Schemes: http, https
+	//
+	// responses:
+	// 200:	User
+	// 400: description:Bad request
+	// 404: description:NotFound
+	// 500: description:Internal Server Error
 	r.HandleFunc("/profile", s.GetUserProfile).Methods(http.MethodGet)
 
 	return r
