@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
@@ -17,6 +18,11 @@ import (
 type LoginDatabase interface {
 	RegisterUser(user *models.User) error
 	LoginUser(user *models.User) (string, error)
+	CreateRole(role string) error
+	DeleteRole(role string) error
+	GetRoles(queryParams url.Values) ([]string, error)
+	AddUserRole(user models.User, role string) error
+	RemoveUserRole(user models.User, role string) error
 	Ping() error
 }
 
@@ -73,6 +79,18 @@ func (s *LoginService) Routes(r *mux.Router) *mux.Router {
 	// 500: description:Internal Server Error
 	r.HandleFunc("/profile", s.GetUserProfile).Methods(http.MethodGet)
 
+	r.HandleFunc("/role", s.CreateRole).Methods(http.MethodPost)
+
+	r.HandleFunc("/role", s.DeleteRole).Methods(http.MethodDelete)
+
+	r.HandleFunc("/role", s.GetRoles).Methods(http.MethodGet)
+
+	r.HandleFunc("/check-role/{role}", s.CheckRoles).Methods(http.MethodPost)
+
+	r.HandleFunc("/user-role/{role}", s.AddUserRole).Methods(http.MethodPost)
+
+	r.HandleFunc("/user-role/{role}", s.RemoveUserRole).Methods(http.MethodPost)
+
 	return r
 }
 
@@ -125,7 +143,6 @@ func (s *LoginService) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	api.RespondWithJSON(w, http.StatusOK, "User Created")
-	return
 }
 
 // LoginUser checks the database for a user and compare allowing users to login
@@ -148,8 +165,6 @@ func (s *LoginService) LoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	api.RespondWithJSON(w, http.StatusOK, token)
-	return
-
 }
 
 // GetUserProfile returns all the information for users
@@ -180,5 +195,193 @@ func (s *LoginService) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	api.RespondWithError(w, api.CheckError(err), err.Error())
-	return
+}
+
+// CreateRole is the handler func to add a role to the roles collection
+func (s *LoginService) CreateRole(w http.ResponseWriter, r *http.Request) {
+	logrus.Infof("CreateRole invoked with URL: %v", r.URL)
+	defer r.Body.Close()
+
+	var role string
+	err := json.NewDecoder(r.Body).Decode(&role)
+	if err != nil {
+		api.RespondWithError(w, http.StatusBadRequest, "Invalid Request Payload")
+		return
+	}
+
+	err = s.Database.CreateRole(role)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+
+	api.RespondWithJSON(w, http.StatusOK, "Role Created")
+
+}
+
+// DeleteRole is the handler func to remove a role from the roles collection
+func (s *LoginService) DeleteRole(w http.ResponseWriter, r *http.Request) {
+	logrus.Infof("CreateRole invoked with URL: %v", r.URL)
+	defer r.Body.Close()
+
+	var role string
+	err := json.NewDecoder(r.Body).Decode(&role)
+	if err != nil {
+		api.RespondWithError(w, http.StatusBadRequest, "Invalid Request Payload")
+		return
+	}
+
+	err = s.Database.DeleteRole(role)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+
+	api.RespondWithJSON(w, http.StatusOK, "Role Deleted")
+}
+
+// GetRoles is the handler func to return all roles in the role collection
+func (s *LoginService) GetRoles(w http.ResponseWriter, r *http.Request) {
+	logrus.Infof("CreateRole invoked with URL: %v", r.URL)
+
+	roles, err := s.Database.GetRoles(nil)
+	if err != nil || roles == nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+
+	api.RespondWithJSON(w, http.StatusOK, roles)
+}
+
+// CheckRoles is the handler func to check a users roles
+func (s *LoginService) CheckRoles(w http.ResponseWriter, r *http.Request) {
+	logrus.Infof("CreateRole invoked with URL: %v", r.URL)
+
+	vars := mux.Vars(r)
+	requiredRole := vars["role"]
+
+	roles, err := s.Database.GetRoles(nil)
+	if err != nil || roles == nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+
+	matches := false
+	for _, role := range roles {
+		if requiredRole == role {
+			matches = true
+		}
+	}
+	if matches == false {
+		api.RespondWithError(w, http.StatusNotFound, "No such role exists")
+		return
+	}
+
+	tokenString := r.Header.Get("Authorization")
+	if strings.Contains(tokenString, "Bearer") {
+		tokenString = strings.Trim(tokenString, "Bearer")
+		tokenString = strings.Trim(tokenString, " ")
+	}
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method")
+		}
+		return []byte("secret"), nil
+	})
+
+	var result models.User
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		result.Username = claims["username"].(string)
+		result.FirstName = claims["firstname"].(string)
+		result.LastName = claims["lastname"].(string)
+		if claims["roles"] != nil {
+			result.Roles = claims["roles"].([]string)
+		}
+	}
+
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+
+	for _, role := range result.Roles {
+		if requiredRole != role {
+			matches = false
+		}
+	}
+
+	if matches == false {
+		api.RespondWithError(w, http.StatusOK, "User does not have permission")
+		return
+	}
+
+	api.RespondWithJSON(w, http.StatusOK, "User has permission")
+}
+
+// AddUserRole is the handler func to add a role to a user
+func (s *LoginService) AddUserRole(w http.ResponseWriter, r *http.Request) {
+	logrus.Infof("CreateRole invoked with URL: %v", r.URL)
+	defer r.Body.Close()
+
+	vars := mux.Vars(r)
+	addedRole := vars["role"]
+
+	roles, err := s.Database.GetRoles(nil)
+	if err != nil || roles == nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+
+	matches := false
+	for _, role := range roles {
+		if addedRole == role {
+			matches = true
+		}
+	}
+	if matches == false {
+		api.RespondWithError(w, http.StatusNotFound, "No such role exists")
+		return
+	}
+
+	var user models.User
+
+	err = json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		api.RespondWithError(w, http.StatusBadRequest, "Invalid Request Payload")
+		return
+	}
+
+	err = s.Database.AddUserRole(user, addedRole)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+
+	api.RespondWithJSON(w, http.StatusOK, "Role added to user")
+}
+
+// RemoveUserRole is the handler func to remove a role from a user
+func (s *LoginService) RemoveUserRole(w http.ResponseWriter, r *http.Request) {
+	logrus.Infof("CreateRole invoked with URL: %v", r.URL)
+	logrus.Infof("CreateRole invoked with URL: %v", r.URL)
+	defer r.Body.Close()
+
+	vars := mux.Vars(r)
+	removeRole := vars["role"]
+
+	var user models.User
+
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		api.RespondWithError(w, http.StatusBadRequest, "Invalid Request Payload")
+		return
+	}
+
+	err = s.Database.RemoveUserRole(user, removeRole)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+
+	api.RespondWithJSON(w, http.StatusOK, "User Role Removed")
 }
