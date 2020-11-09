@@ -85,8 +85,6 @@ func (s *LoginService) Routes(r *mux.Router) *mux.Router {
 
 	r.HandleFunc("/role", s.GetRoles).Methods(http.MethodGet)
 
-	//r.HandleFunc("/check-role/{role}", s.CheckRoles).Methods(http.MethodGet)
-
 	r.HandleFunc("/add-role/{role}", s.AddUserRole).Methods(http.MethodPost)
 
 	r.HandleFunc("/remove-role/{role}", s.RemoveUserRole).Methods(http.MethodPost)
@@ -253,71 +251,6 @@ func (s *LoginService) GetRoles(w http.ResponseWriter, r *http.Request) {
 
 	api.RespondWithJSON(w, http.StatusOK, roles)
 }
-
-// CheckRoles is the handler func to check a users roles
-/*func (s *LoginService) CheckRoles(w http.ResponseWriter, r *http.Request) {
-	logrus.Infof("CreateRole invoked with URL: %v", r.URL)
-
-	vars := mux.Vars(r)
-	requiredRole := vars["role"]
-
-	roles, err := s.Database.GetRoles(nil)
-	if err != nil || roles == nil {
-		api.RespondWithError(w, api.CheckError(err), err.Error())
-		return
-	}
-
-	matches := false
-	for _, role := range roles {
-		if requiredRole == role.Name {
-			matches = true
-		}
-	}
-	if matches == false {
-		api.RespondWithError(w, http.StatusNotFound, "No such role exists")
-		return
-	}
-
-	tokenString := r.Header.Get("Authorization")
-	if strings.Contains(tokenString, "Bearer") {
-		tokenString = strings.Trim(tokenString, "Bearer")
-		tokenString = strings.Trim(tokenString, " ")
-	}
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method")
-		}
-		return []byte("secret"), nil
-	})
-
-	var result models.User
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		result.Username = claims["username"].(string)
-		result.FirstName = claims["firstname"].(string)
-		result.LastName = claims["lastname"].(string)
-		if claims["roles"] != nil {
-			result.Roles = claims["roles"].([]models.Role)
-		}
-	}
-
-	if err != nil {
-		api.RespondWithError(w, api.CheckError(err), err.Error())
-		return
-	}
-
-	for _, role := range result.Roles {
-		if requiredRole != role.Name {
-			matches = false
-		}
-	}
-
-	if matches == false {
-		api.RespondWithError(w, http.StatusOK, "User does not have permission")
-		return
-	}
-
-	api.RespondWithJSON(w, http.StatusOK, "User has permission")
-}*/
 
 // AddUserRole is the handler func to add a role to a user
 func (s *LoginService) AddUserRole(w http.ResponseWriter, r *http.Request) {
