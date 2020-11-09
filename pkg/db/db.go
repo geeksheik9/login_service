@@ -29,7 +29,7 @@ type UserDB struct {
 func (u *UserDB) Ping() error {
 	err := u.client.Ping(context.Background(), readpref.Primary())
 	if err != nil {
-		logrus.Errorf("ERROR connectiong to database %v", err)
+		logrus.Errorf("ERROR connecting to database %v", err)
 	}
 	return err
 }
@@ -80,6 +80,7 @@ func (u *UserDB) LoginUser(user *models.User) (string, error) {
 		"username":  result.Username,
 		"firstname": result.FirstName,
 		"lastname":  result.LastName,
+		"roles":     result.Roles,
 	})
 
 	tokenString, err := token.SignedString([]byte("secret"))
@@ -94,7 +95,7 @@ func (u *UserDB) LoginUser(user *models.User) (string, error) {
 }
 
 // CreateRole inserts role into the role collection
-func (u *UserDB) CreateRole(role string) error {
+func (u *UserDB) CreateRole(role *models.Role) error {
 	logrus.Debug("BEGIN - CreateRole")
 
 	collection := u.client.Database(u.databaseName).Collection(u.roleCollection)
@@ -105,7 +106,7 @@ func (u *UserDB) CreateRole(role string) error {
 }
 
 // DeleteRole removes a role from the role collection
-func (u *UserDB) DeleteRole(role string) error {
+func (u *UserDB) DeleteRole(role *models.Role) error {
 	logrus.Debug("BEGIN - DeleteRole")
 
 	collection := u.client.Database(u.databaseName).Collection(u.roleCollection)
@@ -116,7 +117,7 @@ func (u *UserDB) DeleteRole(role string) error {
 }
 
 // GetRoles returns all existing roles in the role collection
-func (u *UserDB) GetRoles(queryParams url.Values) ([]string, error) {
+func (u *UserDB) GetRoles(queryParams url.Values) ([]models.Role, error) {
 	logrus.Debug("Begin - GetRoles")
 
 	collection := u.client.Database(u.databaseName).Collection(u.roleCollection)
@@ -141,9 +142,9 @@ func (u *UserDB) GetRoles(queryParams url.Values) ([]string, error) {
 		return nil, err
 	}
 
-	var roles []string
+	var roles []models.Role
 	for cur.Next(context.Background()) {
-		var role string
+		var role models.Role
 		err := cur.Decode(&role)
 		if err != nil {
 			return nil, err
@@ -155,11 +156,69 @@ func (u *UserDB) GetRoles(queryParams url.Values) ([]string, error) {
 }
 
 // AddUserRole adds a role that exists in the role collection to the specified user
-func (u *UserDB) AddUserRole(user models.User, role string) error {
-	return nil
+func (u *UserDB) AddUserRole(user models.User, role *models.Role) error {
+	logrus.Debug("Begin - AdddUserRole")
+
+	collection := u.client.Database(u.databaseName).Collection(u.userCollection)
+
+	opts := options.FindOne().
+		SetMaxTime(30 * time.Second).
+		SetSkip(int64(0)).
+		SetSort(bson.D{{
+			Key:   "username",
+			Value: 1,
+		}})
+
+	result := collection.FindOne(context.Background(), bson.M{"username": user.Username}, opts)
+	if result.Err() != nil {
+		return result.Err()
+	}
+
+	var found models.User
+
+	result.Decode(&found)
+	found.Roles = append(found.Roles, *role)
+
+	_, err := collection.UpdateOne(context.Background(), bson.M{"username": found.Username}, bson.D{{
+		Key:   "$set",
+		Value: found,
+	}})
+
+	return err
 }
 
 // RemoveUserRole removes a role assigned to a user
-func (u *UserDB) RemoveUserRole(user models.User, role string) error {
-	return nil
+func (u *UserDB) RemoveUserRole(user models.User, role *models.Role) error {
+	logrus.Debug("Begin - RemoveUserRole")
+
+	collection := u.client.Database(u.databaseName).Collection(u.userCollection)
+
+	opts := options.FindOne().
+		SetMaxTime(30 * time.Second).
+		SetSkip(int64(0)).
+		SetSort(bson.D{{
+			Key:   "username",
+			Value: 1,
+		}})
+
+	result := collection.FindOne(context.Background(), bson.M{"username": user.Username}, opts)
+	if result.Err() != nil {
+		return result.Err()
+	}
+
+	var found models.User
+
+	result.Decode(&found)
+	for i, foundRole := range found.Roles {
+		if foundRole.Name == role.Name {
+			found.Roles = append(found.Roles[:i], found.Roles[i+1:]...)
+		}
+	}
+
+	_, err := collection.UpdateOne(context.Background(), bson.M{"username": found.Username}, bson.D{{
+		Key:   "$set",
+		Value: found,
+	}})
+
+	return err
 }
