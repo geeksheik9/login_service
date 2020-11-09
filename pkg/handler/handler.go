@@ -10,6 +10,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/geeksheik9/login-service/models"
 	"github.com/geeksheik9/login-service/pkg/api"
+	"github.com/geeksheik9/login-service/pkg/rbac"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 )
@@ -126,15 +127,41 @@ func (s *LoginService) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	logrus.Infof("RegisterUser invoked with URL: %v", r.URL)
 	defer r.Body.Close()
 
-	var user models.User
+	tokenString := r.Header.Get("Authorization")
+	if strings.Contains(tokenString, "Bearer") {
+		tokenString = strings.Trim(tokenString, "Bearer")
+		tokenString = strings.Trim(tokenString, " ")
+	}
+	if tokenString == "" {
+		api.RespondWithError(w, http.StatusUnauthorized, "User is not authorized to make this request")
+	}
 
-	err := json.NewDecoder(r.Body).Decode(&user)
+	user, err := decodeToken(tokenString)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+	}
+
+	role := models.Role{
+		Name: "admin",
+	}
+	requiredRoles := []models.Role{
+		role,
+	}
+
+	authorized := rbac.PerformRBACCheck(user, requiredRoles)
+	if !authorized {
+		api.RespondWithError(w, http.StatusUnauthorized, "User is not authorized to make this request")
+	}
+
+	var register models.User
+
+	err = json.NewDecoder(r.Body).Decode(&register)
 	if err != nil {
 		api.RespondWithError(w, http.StatusBadRequest, "Invalid Request Payload")
 		return
 	}
 
-	err = s.Database.RegisterUser(&user)
+	err = s.Database.RegisterUser(&register)
 	if err != nil {
 		api.RespondWithError(w, api.CheckError(err), err.Error())
 		return
@@ -173,30 +200,17 @@ func (s *LoginService) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 		tokenString = strings.Trim(tokenString, "Bearer")
 		tokenString = strings.Trim(tokenString, " ")
 	}
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method")
-		}
-		return []byte("secret"), nil
-	})
+	if tokenString == "" {
+		api.RespondWithError(w, http.StatusUnauthorized, "User is not authorized to make this request")
+	}
 
-	var result models.User
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		result.Username = claims["username"].(string)
-		result.FirstName = claims["firstname"].(string)
-		result.LastName = claims["lastname"].(string)
-		roles := claims["roles"].([]interface{})
-		for _, role := range roles {
-			str, _ := json.Marshal(role)
-			var roleValue models.Role
-			json.Unmarshal(str, &roleValue)
-			result.Roles = append(result.Roles, roleValue)
-		}
-		api.RespondWithJSON(w, http.StatusOK, result)
+	result, err := decodeToken(tokenString)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
 		return
 	}
 
-	api.RespondWithError(w, api.CheckError(err), err.Error())
+	api.RespondWithJSON(w, http.StatusOK, result)
 }
 
 // CreateRole is the handler func to add a role to the roles collection
@@ -210,7 +224,6 @@ func (s *LoginService) CreateRole(w http.ResponseWriter, r *http.Request) {
 		api.RespondWithError(w, http.StatusBadRequest, "Invalid Request Payload")
 		return
 	}
-	logrus.Infof("Role")
 
 	err = s.Database.CreateRole(&role)
 	if err != nil {
@@ -261,7 +274,16 @@ func (s *LoginService) AddUserRole(w http.ResponseWriter, r *http.Request) {
 	logrus.Infof("CreateRole invoked with URL: %v", r.URL)
 	defer r.Body.Close()
 
-	roles, err := s.Database.GetRoles(r.URL.Query())
+	vars := mux.Vars(r)
+	role := vars["role"]
+
+	query, err := url.ParseQuery("name=" + role)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+
+	roles, err := s.Database.GetRoles(query)
 	if err != nil || roles == nil {
 		api.RespondWithError(w, api.CheckError(err), err.Error())
 		return
@@ -335,4 +357,38 @@ func (s *LoginService) RemoveUserRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	api.RespondWithJSON(w, http.StatusOK, "User Role Removed")
+}
+
+/**
+ *
+ * Helpers
+ *
+ **/
+
+func decodeToken(tokenString string) (models.User, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method")
+		}
+		return []byte("secret"), nil
+	})
+
+	if err != nil {
+		return models.User{}, err
+	}
+
+	var result models.User
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		result.Username = claims["username"].(string)
+		result.FirstName = claims["firstname"].(string)
+		result.LastName = claims["lastname"].(string)
+		roles := claims["roles"].([]interface{})
+		for _, role := range roles {
+			str, _ := json.Marshal(role)
+			var roleValue models.Role
+			json.Unmarshal(str, &roleValue)
+			result.Roles = append(result.Roles, roleValue)
+		}
+	}
+	return result, nil
 }
