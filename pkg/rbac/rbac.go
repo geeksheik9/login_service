@@ -1,9 +1,12 @@
 package rbac
 
-import "github.com/geeksheik9/login-service/models"
+import (
+	"github.com/geeksheik9/login-service/models"
+)
 
 // PerformRBACCheck is a work in progress
-func PerformRBACCheck(user models.User, requiredRoles []models.Role) bool {
+func PerformRBACCheck(user models.User, requiredRoles []models.Role) (bool, error) {
+
 	var matches []bool
 	for _, required := range requiredRoles {
 		for _, user := range user.Roles {
@@ -26,5 +29,5 @@ func PerformRBACCheck(user models.User, requiredRoles []models.Role) bool {
 		}
 	}
 
-	return match
+	return match, nil
 }

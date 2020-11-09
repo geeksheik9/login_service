@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -134,11 +135,13 @@ func (s *LoginService) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	}
 	if tokenString == "" {
 		api.RespondWithError(w, http.StatusUnauthorized, "User is not authorized to make this request")
+		return
 	}
 
 	user, err := decodeToken(tokenString)
 	if err != nil {
 		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
 	}
 
 	role := models.Role{
@@ -148,9 +151,20 @@ func (s *LoginService) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		role,
 	}
 
-	authorized := rbac.PerformRBACCheck(user, requiredRoles)
+	err = s.verifyRoles(requiredRoles)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+
+	authorized, err := rbac.PerformRBACCheck(user, requiredRoles)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
 	if !authorized {
 		api.RespondWithError(w, http.StatusUnauthorized, "User is not authorized to make this request")
+		return
 	}
 
 	var register models.User
@@ -218,14 +232,53 @@ func (s *LoginService) CreateRole(w http.ResponseWriter, r *http.Request) {
 	logrus.Infof("CreateRole invoked with URL: %v", r.URL)
 	defer r.Body.Close()
 
-	var role models.Role
-	err := json.NewDecoder(r.Body).Decode(&role)
+	tokenString := r.Header.Get("Authorization")
+	if strings.Contains(tokenString, "Bearer") {
+		tokenString = strings.Trim(tokenString, "Bearer")
+		tokenString = strings.Trim(tokenString, " ")
+	}
+	if tokenString == "" {
+		api.RespondWithError(w, http.StatusUnauthorized, "User is not authorized to make this request")
+		return
+	}
+
+	user, err := decodeToken(tokenString)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+
+	role := models.Role{
+		Name: "admin",
+	}
+	requiredRoles := []models.Role{
+		role,
+	}
+
+	err = s.verifyRoles(requiredRoles)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+
+	authorized, err := rbac.PerformRBACCheck(user, requiredRoles)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+	if !authorized {
+		api.RespondWithError(w, http.StatusUnauthorized, "User is not authorized to make this request")
+		return
+	}
+
+	var create models.Role
+	err = json.NewDecoder(r.Body).Decode(&create)
 	if err != nil {
 		api.RespondWithError(w, http.StatusBadRequest, "Invalid Request Payload")
 		return
 	}
 
-	err = s.Database.CreateRole(&role)
+	err = s.Database.CreateRole(&create)
 	if err != nil {
 		api.RespondWithError(w, api.CheckError(err), err.Error())
 		return
@@ -240,8 +293,47 @@ func (s *LoginService) DeleteRole(w http.ResponseWriter, r *http.Request) {
 	logrus.Infof("CreateRole invoked with URL: %v", r.URL)
 	defer r.Body.Close()
 
-	var role models.Role
-	err := json.NewDecoder(r.Body).Decode(&role)
+	tokenString := r.Header.Get("Authorization")
+	if strings.Contains(tokenString, "Bearer") {
+		tokenString = strings.Trim(tokenString, "Bearer")
+		tokenString = strings.Trim(tokenString, " ")
+	}
+	if tokenString == "" {
+		api.RespondWithError(w, http.StatusUnauthorized, "User is not authorized to make this request")
+		return
+	}
+
+	user, err := decodeToken(tokenString)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+
+	role := models.Role{
+		Name: "admin",
+	}
+	requiredRoles := []models.Role{
+		role,
+	}
+
+	err = s.verifyRoles(requiredRoles)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+
+	authorized, err := rbac.PerformRBACCheck(user, requiredRoles)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+	if !authorized {
+		api.RespondWithError(w, http.StatusUnauthorized, "User is not authorized to make this request")
+		return
+	}
+
+	var delete models.Role
+	err = json.NewDecoder(r.Body).Decode(&delete)
 	if err != nil {
 		api.RespondWithError(w, http.StatusBadRequest, "Invalid Request Payload")
 		return
@@ -260,6 +352,45 @@ func (s *LoginService) DeleteRole(w http.ResponseWriter, r *http.Request) {
 func (s *LoginService) GetRoles(w http.ResponseWriter, r *http.Request) {
 	logrus.Infof("CreateRole invoked with URL: %v", r.URL)
 
+	tokenString := r.Header.Get("Authorization")
+	if strings.Contains(tokenString, "Bearer") {
+		tokenString = strings.Trim(tokenString, "Bearer")
+		tokenString = strings.Trim(tokenString, " ")
+	}
+	if tokenString == "" {
+		api.RespondWithError(w, http.StatusUnauthorized, "User is not authorized to make this request")
+		return
+	}
+
+	user, err := decodeToken(tokenString)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+
+	role := models.Role{
+		Name: "admin",
+	}
+	requiredRoles := []models.Role{
+		role,
+	}
+
+	err = s.verifyRoles(requiredRoles)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+
+	authorized, err := rbac.PerformRBACCheck(user, requiredRoles)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+	if !authorized {
+		api.RespondWithError(w, http.StatusUnauthorized, "User is not authorized to make this request")
+		return
+	}
+
 	roles, err := s.Database.GetRoles(r.URL.Query())
 	if err != nil || roles == nil {
 		api.RespondWithError(w, api.CheckError(err), err.Error())
@@ -274,10 +405,49 @@ func (s *LoginService) AddUserRole(w http.ResponseWriter, r *http.Request) {
 	logrus.Infof("CreateRole invoked with URL: %v", r.URL)
 	defer r.Body.Close()
 
-	vars := mux.Vars(r)
-	role := vars["role"]
+	tokenString := r.Header.Get("Authorization")
+	if strings.Contains(tokenString, "Bearer") {
+		tokenString = strings.Trim(tokenString, "Bearer")
+		tokenString = strings.Trim(tokenString, " ")
+	}
+	if tokenString == "" {
+		api.RespondWithError(w, http.StatusUnauthorized, "User is not authorized to make this request")
+		return
+	}
 
-	query, err := url.ParseQuery("name=" + role)
+	admin, err := decodeToken(tokenString)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+
+	role := models.Role{
+		Name: "admin",
+	}
+	requiredRoles := []models.Role{
+		role,
+	}
+
+	err = s.verifyRoles(requiredRoles)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+
+	authorized, err := rbac.PerformRBACCheck(admin, requiredRoles)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+	if !authorized {
+		api.RespondWithError(w, http.StatusUnauthorized, "User is not authorized to make this request")
+		return
+	}
+
+	vars := mux.Vars(r)
+	add := vars["role"]
+
+	query, err := url.ParseQuery("name=" + add)
 	if err != nil {
 		api.RespondWithError(w, api.CheckError(err), err.Error())
 		return
@@ -316,9 +486,47 @@ func (s *LoginService) AddUserRole(w http.ResponseWriter, r *http.Request) {
 
 // RemoveUserRole is the handler func to remove a role from a user
 func (s *LoginService) RemoveUserRole(w http.ResponseWriter, r *http.Request) {
-	logrus.Infof("CreateRole invoked with URL: %v", r.URL)
-	logrus.Infof("CreateRole invoked with URL: %v", r.URL)
+	logrus.Infof("RemovedRole invoked with URL: %v", r.URL)
 	defer r.Body.Close()
+
+	tokenString := r.Header.Get("Authorization")
+	if strings.Contains(tokenString, "Bearer") {
+		tokenString = strings.Trim(tokenString, "Bearer")
+		tokenString = strings.Trim(tokenString, " ")
+	}
+	if tokenString == "" {
+		api.RespondWithError(w, http.StatusUnauthorized, "User is not authorized to make this request")
+		return
+	}
+
+	admin, err := decodeToken(tokenString)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+
+	role := models.Role{
+		Name: "admin",
+	}
+	requiredRoles := []models.Role{
+		role,
+	}
+
+	err = s.verifyRoles(requiredRoles)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+
+	authorized, err := rbac.PerformRBACCheck(admin, requiredRoles)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+	if !authorized {
+		api.RespondWithError(w, http.StatusUnauthorized, "User is not authorized to make this request")
+		return
+	}
 
 	vars := mux.Vars(r)
 	removeRole := vars["role"]
@@ -391,4 +599,25 @@ func decodeToken(tokenString string) (models.User, error) {
 		}
 	}
 	return result, nil
+}
+
+func (s *LoginService) verifyRoles(roles []models.Role) error {
+	var exists []bool
+	for _, role := range roles {
+		query, err := url.ParseQuery("name=" + role.Name)
+		if err != nil {
+			return err
+		}
+		returned, err := s.Database.GetRoles(query)
+		for _, values := range returned {
+			if role == values {
+				exists = append(exists, true)
+				break
+			}
+		}
+	}
+	if len(exists) != len(roles) {
+		return errors.New("All required roles not found in database")
+	}
+	return nil
 }
