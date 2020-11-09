@@ -185,8 +185,12 @@ func (s *LoginService) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 		result.Username = claims["username"].(string)
 		result.FirstName = claims["firstname"].(string)
 		result.LastName = claims["lastname"].(string)
-		if claims["roles"] != nil {
-			result.Roles = claims["roles"].([]models.Role)
+		roles := claims["roles"].([]interface{})
+		for _, role := range roles {
+			str, _ := json.Marshal(role)
+			var roleValue models.Role
+			json.Unmarshal(str, &roleValue)
+			result.Roles = append(result.Roles, roleValue)
 		}
 		api.RespondWithJSON(w, http.StatusOK, result)
 		return
