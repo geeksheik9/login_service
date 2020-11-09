@@ -87,6 +87,8 @@ func (s *LoginService) Routes(r *mux.Router) *mux.Router {
 
 	r.HandleFunc("/role", s.GetRoles).Methods(http.MethodGet)
 
+	r.HandleFunc("/check-role", s.CheckRoles).Methods(http.MethodPost)
+
 	r.HandleFunc("/add-role/{role}", s.AddUserRole).Methods(http.MethodPost)
 
 	r.HandleFunc("/remove-role/{role}", s.RemoveUserRole).Methods(http.MethodPost)
@@ -565,6 +567,58 @@ func (s *LoginService) RemoveUserRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	api.RespondWithJSON(w, http.StatusOK, "User Role Removed")
+}
+
+// CheckRoles will verify if a user has the required roles from an external api
+func (s *LoginService) CheckRoles(w http.ResponseWriter, r *http.Request) {
+	logrus.Infof("CheckRole invoked with URL: %v", r.URL)
+	defer r.Body.Close()
+
+	tokenString := r.Header.Get("Authorization")
+	if strings.Contains(tokenString, "Bearer") {
+		tokenString = strings.Trim(tokenString, "Bearer")
+		tokenString = strings.Trim(tokenString, " ")
+	}
+	if tokenString == "" {
+		api.RespondWithError(w, http.StatusUnauthorized, "User is not authorized to make this request")
+		return
+	}
+
+	user, err := decodeToken(tokenString)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+
+	var roles []models.Role
+
+	err = json.NewDecoder(r.Body).Decode(&roles)
+	if err != nil {
+		api.RespondWithError(w, http.StatusBadRequest, "Invalid Request Payload")
+		return
+	}
+
+	err = s.verifyRoles(roles)
+	if err != nil {
+		api.RespondWithError(w, api.CheckError(err), err.Error())
+		return
+	}
+
+	var matches []bool
+	for _, role := range roles {
+		for _, usersRoles := range user.Roles {
+			if usersRoles == role {
+				matches = append(matches, true)
+				break
+			}
+		}
+	}
+
+	if len(matches) != len(roles) {
+		api.RespondWithJSON(w, http.StatusOK, "User does not have the required roles")
+		return
+	}
+	api.RespondWithJSON(w, http.StatusOK, "User has permission to view resource")
 }
 
 /**
