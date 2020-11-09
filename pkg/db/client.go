@@ -38,7 +38,8 @@ func InitializeDatabases(client *mongo.Client, config *config.Config) *UserDB {
 	database := &UserDB{
 		client:         client,
 		databaseName:   config.UserDatabase,
-		collectionName: config.UserCollection,
+		userCollection: config.UserCollection,
+		roleCollection: config.RoleCollection,
 	}
 
 	return database

@@ -11,6 +11,7 @@ var envMap = map[string]string{
 	logLevel:       defaultlogLevel,
 	userDatabase:   defaultUserDatabase,
 	userCollection: defaultUserCollection,
+	roleCollection: defaultRoleCollection,
 }
 
 //Config is the general struct for app configuration
@@ -18,6 +19,7 @@ type Config struct {
 	Port           string       `json:"port"`
 	UserDatabase   string       `json:"characterDatabase"`
 	UserCollection string       `json:"characterCollection"`
+	RoleCollection string       `json:"roleCollection"`
 	LogLevel       logrus.Level `json:"log-level"`
 }
 
@@ -45,6 +47,7 @@ func New(accessor Accessor) (c *Config, err error) {
 		LogLevel:       currentLogLevel,
 		UserDatabase:   envMap[userDatabase],
 		UserCollection: envMap[userCollection],
+		RoleCollection: envMap[roleCollection],
 	}
 	return &config, nil
 }
