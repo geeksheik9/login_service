@@ -79,7 +79,7 @@ func (s *LoginService) Routes(r *mux.Router) *mux.Router {
 	// 500: description:Internal Server Error
 	r.HandleFunc("/profile", s.GetUserProfile).Methods(http.MethodGet)
 
-	r.HandleFunc("/role", s.CreateRole).Methods(http.MethodPost)
+	/*r.HandleFunc("/role", s.CreateRole).Methods(http.MethodPost)
 
 	r.HandleFunc("/role", s.DeleteRole).Methods(http.MethodDelete)
 
@@ -87,7 +87,7 @@ func (s *LoginService) Routes(r *mux.Router) *mux.Router {
 
 	r.HandleFunc("/add-role/{role}", s.AddUserRole).Methods(http.MethodPost)
 
-	r.HandleFunc("/remove-role/{role}", s.RemoveUserRole).Methods(http.MethodPost)
+	r.HandleFunc("/remove-role/{role}", s.RemoveUserRole).Methods(http.MethodPost)*/
 
 	return r
 }
@@ -200,7 +200,7 @@ func (s *LoginService) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 // CreateRole is the handler func to add a role to the roles collection
-func (s *LoginService) CreateRole(w http.ResponseWriter, r *http.Request) {
+/*func (s *LoginService) CreateRole(w http.ResponseWriter, r *http.Request) {
 	logrus.Infof("CreateRole invoked with URL: %v", r.URL)
 	defer r.Body.Close()
 
@@ -335,4 +335,4 @@ func (s *LoginService) RemoveUserRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	api.RespondWithJSON(w, http.StatusOK, "User Role Removed")
-}
+}*/
