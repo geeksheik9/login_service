@@ -1,1 +1,1 @@
-login_service_version="v0.0.3-alpha"
+login_service_version="v0.0.4-alpha"
