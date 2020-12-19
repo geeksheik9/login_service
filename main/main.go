@@ -67,5 +67,5 @@ func main() {
 	r = gearService.Routes(r)
 	fmt.Printf("Server listen on port %v\n", config.Port)
 	logrus.Info("END")
-	logrus.Fatal(http.ListenAndServe(":"+config.Port, cors.Default().Handler(r)))
+	logrus.Fatal(http.ListenAndServe(":"+config.Port, cors.AllowAll().Handler(r)))
 }

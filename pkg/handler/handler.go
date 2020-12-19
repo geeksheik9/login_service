@@ -11,6 +11,7 @@ import (
 	"github.com/geeksheik9/login-service/models"
 	"github.com/geeksheik9/login-service/pkg/api"
 	"github.com/gorilla/mux"
+	"github.com/prometheus/common/log"
 	"github.com/sirupsen/logrus"
 )
 
@@ -192,6 +193,7 @@ func (s *LoginService) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 			json.Unmarshal(str, &roleValue)
 			result.Roles = append(result.Roles, roleValue)
 		}
+		log.Info(result)
 		api.RespondWithJSON(w, http.StatusOK, result)
 		return
 	}

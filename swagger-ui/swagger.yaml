@@ -27,7 +27,7 @@ definitions:
 info:
   description: API for registering, logginging in, and getting user information
   title: Login Service API
-  version: 0.0.4-alpha
+  version: 0.0.5-alpha
 paths:
   /login:
     post:
