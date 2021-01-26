@@ -26,7 +26,7 @@ var version string
 
 func main() {
 	//go:generate swagger generate spec
-	logrus.Info("INITIALIZING GEAR CRUD")
+	logrus.Info("INITIALIZING LOGIN SERVICE")
 
 	accessor := viper.New()
 
