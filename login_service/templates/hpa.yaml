@@ -1,0 +1,13 @@
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: { { .Values.service.name } }
+  namespace: { { .Values.metadata.namespace } }
+spec:
+  maxReplicas: { { .Values.replicas.max } }
+  minReplicas: { { .Values.replicas.min } }
+  scaleTargetRef:
+    apiVersion: extensions/v1beta1
+    kind: Deployment
+    name: { { .Values.service.name } }
+  targetCPUUtilizationPercentage: { { .Values.replicas.targetCpuPercent } }

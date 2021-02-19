@@ -1,0 +1,13 @@
+apiVersion: v1
+description: A Helm chart for Kubernetes deployment of login_service
+name: login_service
+version: v0.0.5-alpha
+keywords:
+  - login #enter keywords that relate to the project
+  - service
+  - api
+home: "https://"
+sources:
+  - "http://"
+maintainers:
+  - name: Ben Abrams
