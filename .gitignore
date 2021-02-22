@@ -1,1 +1,4 @@
 .vscode
+*configmap.yaml
+*secret.yaml
+*secret.json

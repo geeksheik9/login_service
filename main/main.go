@@ -10,7 +10,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/geeksheik9/login-service/config"
@@ -30,6 +32,13 @@ func main() {
 
 	accessor := viper.New()
 
+	secretsPath := os.Getenv("SECRETS_PATH")
+
+	secret, err := config.GetSecret(secretsPath)
+	if err != nil {
+		log.Fatalf("error loading config: %s", err.Error())
+	}
+
 	config, err := config.New(accessor)
 	if err != nil {
 		logrus.Fatalf("ERROR LOADING CONFIG: %v", err.Error())
@@ -39,12 +48,12 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	client, err := db.InitializeClients(ctx)
+	client, err := db.InitializeClients(ctx, *secret)
 	if err != nil {
 		logrus.Warnf("Failed to intialize client with error: %v, trying again", err)
 		err = nil
 		ctx, cancel = context.WithTimeout(context.Background(), time.Second*60)
-		client, err = db.InitializeClients(ctx)
+		client, err = db.InitializeClients(ctx, *secret)
 		if err != nil {
 			logrus.Fatalf("Failed to initialize database client a second time with error: %v", err)
 		}

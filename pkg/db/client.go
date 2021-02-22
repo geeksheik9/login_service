@@ -2,17 +2,17 @@ package db
 
 import (
 	"context"
-	"os"
 
 	"github.com/geeksheik9/login-service/config"
+	"github.com/geeksheik9/login-service/models"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // InitializeClients returns a mongo client.
-func InitializeClients(ctx context.Context) (*mongo.Client, error) {
+func InitializeClients(ctx context.Context, secret models.Secret) (*mongo.Client, error) {
 
-	options := options.Client().ApplyURI(os.Getenv("LOCAL_MONGO"))
+	options := options.Client().ApplyURI(secret.URI)
 
 	err := options.Validate()
 	if err != nil {

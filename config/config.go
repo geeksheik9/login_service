@@ -1,8 +1,11 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 
+	"github.com/geeksheik9/login-service/models"
 	"github.com/sirupsen/logrus"
 )
 
@@ -65,4 +68,27 @@ func loadEnvVars(accessor Accessor) error {
 	}
 
 	return nil
+}
+
+func GetSecret(path string) (*models.Secret, error) {
+	s := models.Secret{}
+	if path == "" {
+		path = "./db-secret.json"
+	}
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return nil, err
+	}
+
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	err = json.NewDecoder(file).Decode(&s)
+	if err != nil {
+		return nil, err
+	}
+
+	return &s, nil
 }
