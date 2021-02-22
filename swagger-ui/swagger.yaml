@@ -25,9 +25,9 @@ definitions:
     type: object
     x-go-package: github.com/geeksheik9/login-service/models
 info:
-  description: API for registering, logginging in, and getting user information
+  description: API for registering, logging in, and getting user information
   title: Login Service API
-  version: 0.1.0-alpha
+  version: v0.1.1-alpha
 paths:
   /login:
     post:

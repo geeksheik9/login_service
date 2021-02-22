@@ -36,4 +36,4 @@ white=$'\e[0m'
 
 echo "versions updated to:"
 echo "$grn""sheet-CRUD version:" "$red""$login_service_version""$white"
-echo "$grn""files updated:" "$red""$update_files""$white"
+echo "$grn""files updated:" "$red""${update_files[@]}""$white"
