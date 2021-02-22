@@ -1,10 +1,10 @@
 replicaCount: 1
 image:
   repository: hub.docker.com/repository/docker/geeksheik9/login-service
-  tag: v0.0.5-alpha
+  tag: v0.1.0-alpha
   pullPolicy: Always
 service:
-  name: login_service
+  name: login-service
   type: ClusterIP
   externalPort: 80
   internalPort: 3000

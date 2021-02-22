@@ -1,2 +1,2 @@
 echo adding new configmap
-kubecl apply -f login-configmap.yaml
+kubectl apply -f login-configmap.yaml

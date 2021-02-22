@@ -24,7 +24,10 @@ updateVersion () {
 update_files=(
    "./main/main.go"
    "./swagger-ui/swagger.yaml"
+   "./login_service/values.yaml"
+   "./login_service/Chart.yaml"
 )
+
 updateVersion "$login_service_version" "${update_files[@]}"
 
 red=$'\e[1;31m'
