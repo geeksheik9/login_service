@@ -36,3 +36,14 @@ spec:
           initialDelaySeconds: 10
         resources:
 {{ toYaml .Values.resources | indent 10 }}
+        volumeMounts:
+        - mountPath: /root/db-secret.json
+          name: db-secrets
+          subpath: db-secret.json
+          readonly: true
+        volumes:
+        - name: db-secrets
+          secret:
+            secretName: db-secrets
+        imagePullSecrets:
+          - name: regsecret
