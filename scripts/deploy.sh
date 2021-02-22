@@ -10,4 +10,4 @@ versionedImageName="$tag:$version"
 taggedImageName="$registry/$repository/$versionedImageName"
 
 echo "time to deploy!"
-helm upgrade -i ${name} --namespace=${namespace} --set image.repository=${registry}/${repository}/${name},ingress.env=rancher,ingress.domain=geeksheiks-lab.com,image.tag=${version}
+helm upgrade -i ${name} ${name} --namespace=${namespace} --set image.repository=${registry}/${repository}/${name},ingress.env=rancher,ingress.domain=geeksheiks-lab.com,image.tag=${version}
