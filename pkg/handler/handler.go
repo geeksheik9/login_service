@@ -2,7 +2,7 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -10,12 +10,13 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/geeksheik9/login-service/models"
 	"github.com/geeksheik9/login-service/pkg/api"
+
 	"github.com/gorilla/mux"
-	"github.com/prometheus/common/log"
 	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
-//LoginDatabase is the interface setup for the login service
+// LoginDatabase is the interface setup for the login service
 type LoginDatabase interface {
 	RegisterUser(user *models.User) error
 	LoginUser(user *models.User) (string, error)
@@ -27,13 +28,13 @@ type LoginDatabase interface {
 	Ping() error
 }
 
-//LoginService is the implementation of a service to login to an application
+// LoginService is the implementation of a service to login to an application
 type LoginService struct {
 	Version  string
 	Database LoginDatabase
 }
 
-//Routes sets up the routes for the RESTful interface
+// Routes sets up the routes for the RESTful interface
 func (s *LoginService) Routes(r *mux.Router) *mux.Router {
 	r.HandleFunc("/ping", s.PingCheck).Methods(http.MethodGet)
 	r.Handle("/health", s.healthCheck(s.Database)).Methods(http.MethodGet)
@@ -93,14 +94,16 @@ func (s *LoginService) Routes(r *mux.Router) *mux.Router {
 	return r
 }
 
-//PingCheck checks that the app is running and returns 200, OK, version
+// PingCheck checks that the app is running and returns 200, OK, version
 func (s *LoginService) PingCheck(w http.ResponseWriter, r *http.Request) {
+	log.Infof("PingCheck invoked with URL: %v", r.URL)
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("OK, " + s.Version))
 }
 
 func (s *LoginService) healthCheck(database LoginDatabase) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Infof("HealthCheck invoked with URL: %v", r.URL)
 		dbErr := database.Ping()
 		var stringDBErr string
 
@@ -176,7 +179,7 @@ func (s *LoginService) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 	}
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method")
+			return nil, errors.New("unexpected signing method")
 		}
 		return []byte("secret"), nil
 	})

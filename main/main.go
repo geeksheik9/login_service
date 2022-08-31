@@ -1,6 +1,6 @@
 // Package main Login Service API
 //
-// API for registering, logginging in, and getting user information
+// # API for registering, logginging in, and getting user information
 //
 // version: 0.0.1-alpha
 //
@@ -16,9 +16,10 @@ import (
 	"github.com/geeksheik9/login-service/config"
 	"github.com/geeksheik9/login-service/pkg/db"
 	"github.com/geeksheik9/login-service/pkg/handler"
+
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -26,13 +27,13 @@ var version string
 
 func main() {
 	//go:generate swagger generate spec
-	logrus.Info("INITIALIZING LOGIN SERVICE")
+	log.Info("INITIALIZING LOGIN SERVICE")
 
 	accessor := viper.New()
 
 	config, err := config.New(accessor)
 	if err != nil {
-		logrus.Fatalf("ERROR LOADING CONFIG: %v", err.Error())
+		log.Fatalf("ERROR LOADING CONFIG: %v", err.Error())
 	}
 
 	timeout := time.Second * 5
@@ -41,12 +42,12 @@ func main() {
 
 	client, err := db.InitializeClients(ctx)
 	if err != nil {
-		logrus.Warnf("Failed to intialize client with error: %v, trying again", err)
+		log.Warnf("Failed to intialize client with error: %v, trying again", err)
 		err = nil
-		ctx, cancel = context.WithTimeout(context.Background(), time.Second*60)
+		ctx, _ = context.WithTimeout(context.Background(), time.Second*60)
 		client, err = db.InitializeClients(ctx)
 		if err != nil {
-			logrus.Fatalf("Failed to initialize database client a second time with error: %v", err)
+			log.Fatalf("Failed to initialize database client a second time with error: %v", err)
 		}
 	}
 
@@ -54,7 +55,7 @@ func main() {
 
 	database := db.InitializeDatabases(client, config)
 	if database == nil {
-		logrus.Fatalf("Error no database from client %v", client)
+		log.Fatalf("Error no database from client %v", client)
 	}
 
 	gearService := handler.LoginService{
@@ -66,6 +67,6 @@ func main() {
 
 	r = gearService.Routes(r)
 	fmt.Printf("Server listen on port %v\n", config.Port)
-	logrus.Info("END")
-	logrus.Fatal(http.ListenAndServe(":"+config.Port, cors.AllowAll().Handler(r)))
+	log.Info("END")
+	log.Fatal(http.ListenAndServe(":"+config.Port, cors.AllowAll().Handler(r)))
 }
