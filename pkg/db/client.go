@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/geeksheik9/login-service/config"
+
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )

@@ -7,12 +7,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/geeksheik9/login-service/models"
 	"github.com/geeksheik9/login-service/pkg/api"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -127,7 +126,7 @@ func (s *LoginService) healthCheck(database LoginDatabase) http.Handler {
 
 // RegisterUser allows a user to register if a username does not already exist
 func (s *LoginService) RegisterUser(w http.ResponseWriter, r *http.Request) {
-	logrus.Infof("RegisterUser invoked with URL: %v", r.URL)
+	log.Infof("RegisterUser invoked with URL: %v", r.URL)
 	defer r.Body.Close()
 
 	var user models.User
@@ -149,7 +148,7 @@ func (s *LoginService) RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 // LoginUser checks the database for a user and compare allowing users to login
 func (s *LoginService) LoginUser(w http.ResponseWriter, r *http.Request) {
-	logrus.Infof("LoginUser invoked with URL: %v", r.URL)
+	log.Infof("LoginUser invoked with URL: %v", r.URL)
 	defer r.Body.Close()
 
 	var user models.User
@@ -171,7 +170,7 @@ func (s *LoginService) LoginUser(w http.ResponseWriter, r *http.Request) {
 
 // GetUserProfile returns all the information for users
 func (s *LoginService) GetUserProfile(w http.ResponseWriter, r *http.Request) {
-	logrus.Infof("GetUserProfile invoked with URL: %v", r.URL)
+	log.Infof("GetUserProfile invoked with URL: %v", r.URL)
 	tokenString := r.Header.Get("Authorization")
 	if strings.Contains(tokenString, "Bearer") {
 		tokenString = strings.Trim(tokenString, "Bearer")

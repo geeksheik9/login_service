@@ -9,10 +9,9 @@ import (
 	"strconv"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // ErrorResponse
@@ -97,7 +96,7 @@ func CheckError(err error) int {
 	return code
 }
 
-//BuildQuery sets up the mongo query
+// BuildQuery sets up the mongo query
 func BuildQuery(ID *primitive.ObjectID, name *string, other ...bson.M) bson.M {
 	conditions := []bson.M{}
 	c := bson.M{}
@@ -122,7 +121,7 @@ func BuildQuery(ID *primitive.ObjectID, name *string, other ...bson.M) bson.M {
 	return c
 }
 
-//BuildFilter sets up the mongo filtering
+// BuildFilter sets up the mongo filtering
 func BuildFilter(queryParams url.Values) (int, int, string, bson.M) {
 	filter := bson.M{}
 	filters := []bson.M{}

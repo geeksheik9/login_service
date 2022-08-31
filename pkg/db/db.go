@@ -9,6 +9,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/geeksheik9/login-service/models"
 	"github.com/geeksheik9/login-service/pkg/api"
+
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -25,7 +26,7 @@ type UserDB struct {
 	roleCollection string
 }
 
-//Ping checks that the database is running
+// Ping checks that the database is running
 func (u *UserDB) Ping() error {
 	err := u.client.Ping(context.Background(), readpref.Primary())
 	if err != nil {
